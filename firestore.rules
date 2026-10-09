@@ -1,0 +1,142 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function role() {
+      return isSignedIn()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : null;
+    }
+
+    function isUser() {
+      return role() == 'user';
+    }
+
+    function isCounter() {
+      return role() == 'counter' || role() == 'center';
+    }
+
+    function isAdmin() {
+      return role() == 'admin';
+    }
+
+    function childDoc(childId) {
+      return get(/databases/$(database)/documents/children/$(childId));
+    }
+
+    function ownsChild(childId) {
+      return isSignedIn()
+        && childDoc(childId).data.parentId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && (
+          request.resource.data.role == 'user'
+          || request.resource.data.role == 'counter'
+          || request.resource.data.role == 'center'
+        );
+
+      allow update: if isSignedIn()
+        && (
+          (resource.data.uid == request.auth.uid)
+          || isAdmin()
+          || isCounter()
+        )
+        && request.resource.data.role == resource.data.role;
+
+      allow delete: if isAdmin();
+    }
+
+    match /children/{childId} {
+      allow create: if isSignedIn()
+        && isUser()
+        && request.resource.data.parentId == request.auth.uid
+        && request.resource.data.approved == false;
+
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.parentId
+        || isCounter()
+      );
+
+      allow update: if isSignedIn() && (
+        (request.auth.uid == resource.data.parentId
+          && resource.data.approved == false
+          && request.resource.data.approved == resource.data.approved)
+        || isCounter()
+      );
+
+      allow delete: if isCounter();
+    }
+
+    match /vaccines/{vaccineId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isCounter();
+    }
+
+    match /centers/{centerId} {
+      allow read: if isSignedIn();
+      allow create, update: if isCounter();
+      allow delete: if false;
+    }
+
+    match /appointments/{appointmentId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && isUser()
+        && request.resource.data.parentId == request.auth.uid
+        && (
+          ownsChild(request.resource.data.childId)
+          || request.resource.data.parentId == request.auth.uid
+        );
+
+      allow update, delete: if isCounter();
+    }
+
+    match /vaccination_records/{recordId} {
+      allow read: if isSignedIn();
+
+      allow create: if isCounter() || (
+        isUser()
+        && request.resource.data.parentId == request.auth.uid
+        && request.resource.data.centerId == ''
+        && request.resource.data.approvedBy == ''
+        && request.resource.data.status == 'pending'
+      );
+
+      allow update, delete: if isCounter();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isCounter() || resource.data.targetUserId == request.auth.uid);
+      allow delete: if isCounter();
+    }
+
+    match /center_messages/{messageId} {
+      allow read: if isSignedIn() && (
+        resource.data.parentId == request.auth.uid
+        || isCounter()
+      );
+      allow create: if isSignedIn() && (
+        request.resource.data.parentId == request.auth.uid
+      );
+      allow update: if isSignedIn() && isCounter();
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      // إعطاء المدير صلاحيات كاملة للقراءة والكتابة في جميع المجموعات
+      allow read, write: if isAdmin();
+    }
+  }
+}

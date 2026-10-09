@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1012416922510",
+    "project_id": "vmsa-391ad",
+    "storage_bucket": "vmsa-391ad.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012416922510:android:c7216e0f824fb3d2841adf",
+        "android_client_info": {
+          "package_name": "com.example.vaccine_aapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6-ibaY5MVK1ShdE5rS3RN_EMS2ReN67g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012416922510:android:ebbaf9349c07d685841adf",
+        "android_client_info": {
+          "package_name": "saleh2026.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6-ibaY5MVK1ShdE5rS3RN_EMS2ReN67g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
